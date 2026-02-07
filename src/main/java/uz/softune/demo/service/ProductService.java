@@ -25,6 +25,7 @@ public class ProductService {
     }
 
     public List<Product> getProductsByFarmer(String farmerId) {
+        metrics.incrementSearchQuery();
         return repository.findByFarmerId(farmerId);
     }
 
@@ -76,6 +77,7 @@ public class ProductService {
     public void removeProduct(Long id) {
         repository.findById(id).ifPresent(product -> {
             repository.delete(product);
+            metrics.incrementSpoilage();
             metrics.incrementRemove();
             metrics.removeProduct(product.getName());
             log.info("Food-APP: INFO: Removed product {}", product.getName());
