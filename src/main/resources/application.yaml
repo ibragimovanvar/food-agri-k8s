@@ -28,7 +28,11 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus
+        include: health,info,prometheus,metrics
+  metrics:
+    tags:
+      application: food-agri-service  # Buni Grafanada filtr qilishda ishlatamiz
+      region: uz-tashkent
 
   endpoint:
     health:
