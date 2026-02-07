@@ -1,0 +1,97 @@
+name: Food Agriculture K8s CI/CD pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  security-events: write
+
+jobs:
+  build-and-publish:
+    name: Build & Publish Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Git tarixi va fayllarni to'liq olish uchun
+
+      - name: Configure Java (Temurin 21)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Prepare Maven dependencies
+        run: mvn -B dependency:go-offline
+
+      - name: Compile application
+        run: mvn clean package -DskipTests
+
+      # 1. Docker Hubga kirish (Sening akkaunting bilan)
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }} # GitHub Secretga "ibragimovanvar" deb yozasan
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }} # Docker Hub token/parol
+
+      # 2. Image yasash va yuklash (ibragimovanvar/food-agri ga)
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ibragimovanvar/food-agri:${{ github.sha }}
+            ibragimovanvar/food-agri:latest
+
+      # 3. Helm Chartni yangilash (GitOps)
+      - name: Update Helm image tag
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          # Values.yaml dagi "tag:" qatorini topib, yangi SHA hashga o'zgartiradi
+          sed -i 's|tag:.*|tag: "${{ github.sha }}"|' helm/food-app/values.yaml
+          
+          # Ehtiyot shart: Repository nomini ham to'g'rilab ketamiz (agar eski qolib ketgan bo'lsa)
+          sed -i 's|repository:.*|repository: ibragimovanvar/food-agri|' helm/food-app/values.yaml
+
+      # 4. O'zgarishni GitHubga saqlash (Commit & Push)
+      - name: Commit Helm chart update
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@github.com"
+          git add helm/food-app/values.yaml
+          
+          # [skip ci] juda muhim, bo'lmasa pipeline qayta-qayta ishlayveradi
+          git commit -m "ci: update image tag to ${{ github.sha }} [skip ci]" || echo "No changes to commit"
+          git push origin main
+
+  security-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    needs: build-and-publish
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # Sening yangi yuklagan imagenni tekshiramiz
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.18.0
+        with:
+          image-ref: 'ibragimovanvar/food-agri:${{ github.sha }}'
+          format: 'table'
+          exit-code: '0' # 1 qilsang, xato topsa pipelineni to'xtatadi (hozircha 0 tursin)
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
