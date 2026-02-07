@@ -1,15 +1,16 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "food-app.fullname" . }}
+  name: food-app
+  namespace: monitoring
   labels:
-    {{- include "food-app.labels" . | nindent 4 }}
+    app: food-app
 spec:
-  type: {{ .Values.service.type }}
+  type: ClusterIP
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: http
+    - port: 80          # Tashqariga ko'rinadigan port
+      targetPort: 8080  # Pod ichidagi Spring Boot porti
       protocol: TCP
       name: http
   selector:
-    {{- include "food-app.selectorLabels" . | nindent 4 }}
+    app: food-app       # Bu Deploymentdagi podlarni topadi
