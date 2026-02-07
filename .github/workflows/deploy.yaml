@@ -1,4 +1,4 @@
-name: Food Agriculture K8s CI/CD pipeline
+name: Food Agriculture K8s CI/CD pipeline v1
 
 on:
   push:
