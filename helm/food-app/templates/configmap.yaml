@@ -1,16 +1,13 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "food-app.fullname" . }}-config
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "food-app.labels" . | nindent 4 }}
-
+  name: food-app-config
+  namespace: monitoring
 data:
-  application.yaml:  |
+  application.yaml: |
     spring:
       application:
-        name: {{ include "food-app.name" . }}
+        name: food-app-backend
 
     management:
       endpoints:
@@ -28,3 +25,4 @@ data:
         export:
           prometheus:
             enabled: true
+            step: 1m
