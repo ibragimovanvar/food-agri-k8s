@@ -1,50 +1,31 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "food-app.fullname" . }}
+  name: food-app
+  namespace: monitoring
   labels:
-    {{- include "food-app.labels" . | nindent 4 }}
+    app: food-app
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.replicaCount }}
-  {{- end }}
+  replicas: 1
   selector:
     matchLabels:
-      {{- include "food-app.selectorLabels" . | nindent 6 }}
+      app: food-app
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
-      annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       labels:
-        {{- include "food-app.labels" . | nindent 8 }}
-        {{- with .Values.podLabels }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+        app: food-app
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      serviceAccountName: {{ include "food-app.serviceAccountName" . }}
-      {{- with .Values.podSecurityContext }}
-      securityContext:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       containers:
-        - name: {{ .Chart.Name }}
-          {{- with .Values.securityContext }}
-          securityContext:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+        - name: food-app
+          # Bu qator juda muhim! CI/CD (GitHub Actions) versiyani shu yerga yozadi
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8080
               protocol: TCP
 
+          # Dastur "tirikmi" tekshirish uchun
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
@@ -52,6 +33,7 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 10
 
+          # Dastur "ishlashga tayyormi" tekshirish uchun
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -59,12 +41,10 @@ spec:
             initialDelaySeconds: 20
             periodSeconds: 10
 
-          {{- with .Values.resources }}
           resources:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-
-          {{- with .Values.volumeMounts }}
-          volumeMounts:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 200m
+              memory: 256Mi
