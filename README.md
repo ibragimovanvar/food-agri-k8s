@@ -188,8 +188,8 @@ Pods and services are validated using Lens to ensure successful deployment.
 * HTTP requests
 
 📸 **Evidence**
-![Default Metrics](images/Application Metrics 1.png)
-![Default Metrics](images/Application Metrics 2.png)
+![Default Metrics](images/Application-Metrics-1.png)
+![Default Metrics](images/Application-Metrics-2.png)
 ### Custom Business Metrics
 
 Implemented using **Micrometer**:
@@ -200,7 +200,7 @@ Implemented using **Micrometer**:
 * Processing duration
 
 📸 **Evidence**
-![Product Metrics](images/Custom Metrics1.png)
+![Product Metrics](images/Custom-Metrics1.png)
 
 #### Farm Product Metrics
 
@@ -215,7 +215,7 @@ Implemented using **Micrometer**:
 * Sent / failed notifications by time
 
 📸 **Evidence**
-![Order Metrics](images/Custom Metrics 2.png)
+![Order Metrics](images/Custom-Metrics2.png)
 
 ---
 
